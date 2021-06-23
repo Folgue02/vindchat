@@ -1,18 +1,21 @@
 from threading import Thread
 import socket
 from .logging import Logger
+from .commandhandler import CommandHandler
 from templates import template # I dont know why this works, apparently, the import its made from the dir of 'server.py'
 from json import loads, dumps, JSONDecodeError
 
 
 class Handler:
-    def __init__(self, server: socket.socket, user_limit: int = 64, bufsize: int = 4096, logfile=None):
+    def __init__(self, server: socket.socket, user_limit: int = 64, bufsize: int = 4096, logfile=None, name_length: str=30):
         self.server = server
         self.user_limit = user_limit
         self.database = {}
         self.last_id = 0
         self.bufsize = bufsize
         self.logger = Logger(logfile=logfile)
+        self.command_handler = CommandHandler(self)
+        self.name_length = name_length
 
     def add_client(self, client_obj: socket.socket) -> int:
         # Add a client to the client list
@@ -26,7 +29,7 @@ class Handler:
                                                        daemon=False)
         self.database[self.last_id]["thread"].start()
         self.broadcast_message(template.server_message(f"User with id {self.last_id} joined the server."))
-
+        self.logger.log_msg("SERVER", f"User with id {self.last_id} joined the server.")
         return self.last_id
 
     def broadcast_message(self, message) -> None:
@@ -62,10 +65,20 @@ class Handler:
         while client_id in self.database:
             try:
                 msg = self.database[client_id]["socket"].recv(self.bufsize)
-            except Exception as e:
+
+            except ConnectionAbortedError:
+                self.logger.log_msg("log", f"User with id {client_id} has disconnected")
+
+                if client_id in self.database:  # Disconnect in case that the
+                    self.disconnect_client(client_id)
+
+                break
+
+            except:
                 if client_id in self.database:
-                    self.logger.log_msg("error", f"Client {client_id} has been disconnected, or some error ocurred, error: {e}.")
+                    self.logger.log_msg("error", f"Client {client_id} has been disconnected, or some error ocurred.")
                     self.disconnect_client(client_id)   # TODO Fix this mess and avoid triggering errors when disconnected.
+                    
                 else:
                     break
                 return
@@ -86,7 +99,7 @@ class Handler:
 
         elif client_input["type"] == "command":
             self.logger.log_msg("log", f"User '{self.database[client_id]['name']}#{client_id}' has issued with command '{client_input['command']}'")
-
+            self.command_handler.execute_command(client_id, client_input["command"], client_input["pars"])
 
 
         else:

@@ -8,9 +8,6 @@
 ### Requirements
 - Python 3.x
 - Windows / Linux
-- Python modules
-    - Termcolor
-    - Colorama
     
 ## Author
 - Folgue -- [Folgue02](https://www.github.com/Folgue02)

@@ -1,8 +1,5 @@
-from termcolor import colored
-from colorama import init
 from datetime import date, datetime
 import os
-init()
 
 
 class Logger:

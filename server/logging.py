@@ -12,7 +12,7 @@ class Logger:
     def log_msg(self, msg_type: str, message: str) -> None:
         string = f"[{datetime.now().strftime('%H:%M:%S')} // {msg_type}]: {message}"
 
-        if self.logfile != None: # TODO Fix this mess
+        if self.logfile != None:
             if not os.path.exists(self.logfile):
                 open(self.logfile, "w").write(string)
             

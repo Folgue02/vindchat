@@ -1,7 +1,7 @@
 # VindChat
 
 ## About VindChat
-*VindChat* its a TCP / IP server written in python using the `socket` module.
+*VindChat* it's a TCP / IP server written in python using the `socket` module.
 
 ## Getting started
 

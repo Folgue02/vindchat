@@ -1,9 +1,9 @@
 from threading import Thread
 import socket
-from .logging import Logger
+from share.logging import Logger
 from .commandhandler import CommandHandler
 from templates import template # I dont know why this works, apparently, the import its made from the dir of 'server.py'
-from json import loads, dumps, JSONDecodeError
+from json import loads, JSONDecodeError
 
 
 class Handler:
@@ -93,7 +93,7 @@ class Handler:
         except JSONDecodeError:
             self.logger.log_msg("error", f"Client with id '{client_id}' has sent an invalid message. ('{client_input}')")
 
-        if client_input["type"] == "message":  # Default message
+        if client_input["type"] == "msg":  # Default message
             self.broadcast_message(template.common_message(client_id, self.database[client_id]["name"], client_input["message"]))
             self.logger.log_msg(f"Message from {self.database[client_id]['name']}#{client_id}", client_input["message"])
 

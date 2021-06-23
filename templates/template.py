@@ -3,12 +3,12 @@ from json import dumps
 
 def common_client_message(message:str) -> str:
     # Message that the client sends to the server
-    return dumps({"type": "message", "message": message})
+    return dumps({"type": "msg", "message": message})
 
 
 def common_message(author_id:int, author_name:str, message:str) -> str:
     # Message that the client receives
-    return dumps({"type": "message", "author_id": author_id, "author_name": author_name, "msg": message})
+    return dumps({"type": "msg", "author_id": author_id, "author_name": author_name, "msg": message})
 
 
 def server_message(message:str) -> str:

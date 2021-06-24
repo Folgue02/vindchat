@@ -12,6 +12,7 @@ port = 25565
 me = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 logger = Logger()
 
+
 def sender():
     while True:
         userinput = input(">")
@@ -40,6 +41,8 @@ try:
         msg = me.recv(1028).decode("utf-8")
 
         try:
+            print(" ->" + msg + "<- ")
+
             msg = loads(msg)
 
         except JSONDecodeError:

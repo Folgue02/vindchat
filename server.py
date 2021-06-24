@@ -16,7 +16,7 @@ SOC = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 SOC.bind((ADDRESS, PORT))
 
 # Client handler
-HANDLER = Handler(SOC, bufsize=BUFSIZE, logfile="./logs.txt")
+HANDLER = Handler(SOC, "./database.json",bufsize=BUFSIZE, logfile="./logs.txt")
 
 
 def listener():

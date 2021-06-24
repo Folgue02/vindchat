@@ -2,6 +2,7 @@ from traceback import print_exc
 from templates import template
 from share.codes import CODES
 
+
 class CommandHandler:
     def __init__(self, server):
         self.server = server
@@ -18,7 +19,7 @@ class CommandHandler:
             except Exception as e:
                 self.server.sessions[author_id]["socket"].send(template.command_result(1).encode("utf-8"))
 
-    def chnick(self, author_id, parameters):  # TODO Make the commands always return a code.
+    def chnick(self, author_id, parameters):
         if len(parameters) == 0:
             self.server.sessions[author_id]["socket"].send(template.command_result(3).encode("utf-8"))
 
@@ -27,5 +28,14 @@ class CommandHandler:
 
         else:
             self.server.sessions[author_id]["name"] = parameters[0]
+            
+            # Change nick in the database
+            try:
+                self.server.database.modify_account(self.server.get_session_account(author_id), nick=parameters[0])
+            except Exception as e:
+                self.server.logger.log_msg("error", f"chnick: Couldn't save changes to the database: '{e}'")
+            
+
+
 
 # TODO Write more builtin commands

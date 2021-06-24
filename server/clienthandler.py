@@ -15,7 +15,7 @@ class Handler:
         self.last_id = 0
         self.bufsize = bufsize
         self.logger = Logger(logfile=logfile)
-        self.database = AccountHandler(database_file)
+        self.database = AccountHandler(self, database_file)
         self.command_handler = CommandHandler(self)
         self.name_length = name_length
 
@@ -23,20 +23,30 @@ class Handler:
         # Add a client to the client list
 
         # Pick an Id for the new client
-        self.sessions[self.last_id + 1] = {"socket": client_obj, "name": self.last_id + 1}
+        self.sessions[self.last_id + 1] = {"socket": client_obj, "name": self.last_id + 1, "account":None}
         self.last_id += 1
 
         # Start dedicated thread for the client
         self.sessions[self.last_id]["thread"] = Thread(target=self._dedicated_client_handler, args=[self.last_id],
                                                        daemon=False)
         self.sessions[self.last_id]["thread"].start()
-        self.broadcast_message(template.server_message(f"User with id {self.last_id} joined the server."))
+        #self.broadcast_message(template.server_message(f"User with id {self.last_id} joined the server."))
         self.logger.log_msg("SERVER", f"User with id {self.last_id} joined the server.")
         return self.last_id
 
     def broadcast_message(self, message) -> None:
+        """
+        Sends a message to all the sessions with account
+        :param message:
+        :return:
+        """
+
         for client in self.sessions:
-            self.send_message(client, message)
+            if not self.get_session_account(client):
+                pass
+
+            else:
+                self.send_message(client, message)
 
     def send_message(self, client_id: int, message: str or bytes) -> None:
         """
@@ -55,7 +65,7 @@ class Handler:
 
         try:
 
-            self.sessions[client_id]["socket"].send(message.encode("utf-8"))
+            self.sessions[client_id]["socket"].send(message)
 
         except Exception as e:
             self.logger.log_msg("error",
@@ -107,28 +117,35 @@ class Handler:
         # First msg its not a login or register package
         if not first_msg["type"] == "login" and not first_msg["type"] == "register":
             self.logger.log_msg("error", f"Client '{client_id}' didn't send a login/register package.")
+            self.send_message(client_id, template.command_result(6))
             self.disconnect_client(client_id)
             return
 
         else:
+            # Login
             if first_msg["type"] == "login":
                 if self.database.verify_login(first_msg["name"], first_msg["passwd"]):
-                    self.sessions[client_id]["name"] = first_msg["msg"] # Change name of the session to the account name
+                    account = self.database.get_account(first_msg["name"])
+
+                    self.sessions[client_id]["name"] = account["nick"]  # Change name of the session to the account name
+                    self.sessions[client_id]["account"] = first_msg["name"]
 
                 else:
-                    self.logger.log_msg("log", f"Client '{client_id}' failed login into acc '{first_msg['name']}', disconnecting him...")
+                    self.logger.log_msg("log", f"Client '{client_id}' failed login into account '{first_msg['name']}', disconnecting him...")
                     self.disconnect_client(client_id)
                     return
 
+            # Register
             elif first_msg["type"] == "register":
                 if self.database.register_account(first_msg["name"], first_msg["passwd"]):  # account register went well
                     self.logger.log_msg("log", f"Account registered as '{first_msg['name']}'")
-                    self.sessions[client_id]["socket"].send(template.command_result(0).encode("utf-8"))
+                    self.send_message(client_id, template.command_result(0).encode("utf-8"))
                     self.disconnect_client(client_id)
                     return
 
                 else:  # Something went wrong during account registration
-                    self.sessions[client_id]["socket"].send(template.command_result(6).encode("utf-8"))
+                    self.send_message(client_id, template.command_result(6).encode("utf-8"))
+                    self.logger.log_msg("error", f"Client '{client_id}' failed registration, disconnecting him...")
                     self.disconnect_client(client_id)
                     return
 
@@ -161,7 +178,9 @@ class Handler:
             client_input = loads(client_input)
 
         except JSONDecodeError:
-            self.logger.log_msg("error", f"Client with id '{client_id}' has sent an invalid message. ('{client_input}')")
+            self.logger.log_msg("error", f"_dedicated_client_handler: Client with id '{client_id}' has sent an invalid message. ('{client_input}')")
+            self.disconnect_client(client_id)
+            return
 
         if client_input["type"] == "msg":  # Default message TODO FIX THIS
             self.broadcast_message(template.common_message(client_id, self.sessions[client_id]["name"], client_input["message"]))
@@ -171,7 +190,21 @@ class Handler:
             self.logger.log_msg("log", f"User '{self.sessions[client_id]['name']}#{client_id}' has issued with command '{client_input['command']}'")
             self.command_handler.execute_command(client_id, client_input["command"], client_input["pars"])
 
+
         else:
             self.logger.log_msg("warning", f"Client with id {client_id} sent an unknown type of message: '{client_input['type']}'")
+
+    def get_session_account(self, client_id: int) -> str:
+        """
+        Returns the name of the account related to the client
+        :param client_id:
+        :return str:
+        """
+
+        if not client_id in self.sessions:
+            raise KeyError(f"get_session_account: Cannot find client '{client_id}'")
+
+        else:
+            return self.sessions[client_id]["account"]
 
 

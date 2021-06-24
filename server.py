@@ -2,6 +2,9 @@ import socket
 from threading import Thread
 from traceback import print_exc
 
+__version__ = 0.8
+__author__ = "Folgue02"
+
 # Project libraries
 from server.clienthandler import Handler
 from templates import template
@@ -23,8 +26,6 @@ def listener():
     while True:
         c, a = SOC.accept()
         
-        print(c, a)
-
         # Add to the handler
         new_client = HANDLER.add_client(c)
         print(f"New client added to the handler: {new_client}")

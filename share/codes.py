@@ -9,5 +9,6 @@ CODES = {
     4: "Not allowed to use command.",
     5: "Invalid usage.",
     6: "Wrong credentials",
-    7: "Couldn't register account."
+    7: "Couldn't register account.",
+    8: "User not found."
 }

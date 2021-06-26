@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import socket
 from threading import Thread
 from templates import template
@@ -7,6 +8,10 @@ from share.logging import Logger
 from traceback import print_exc
 from share import codes
 from argparse import ArgumentParser
+from sys import platform
+
+if platform == "linux":
+    import readline
 
 address = "localhost"
 port = 25565
@@ -19,13 +24,16 @@ ACCOUNT_PASSWD = "guest"
 
 args = ArgumentParser()
 
-args.add_argument("action", default=None, help="[register/login]")
+args.add_argument("-r", "--register", default=False, action="store_true", help="Register an specified account.")
+args.add_argument("-l", "--login", default=False, action="store_true", help="Log into the server with an specified account.")
 args.add_argument("name", default=None, help="Username")
 args.add_argument("passwd", default=None, help="Password")
 ARGS = args.parse_args()
 
-def sender():
 
+def sender():
+    global account_name
+    global account_passwd
     # Set credentials
     if ARGS.name:
         account_name = ARGS.name
@@ -34,10 +42,10 @@ def sender():
         account_passwd = ARGS.passwd
 
     # Register / Login
-    if ARGS.action == "register":
+    if ARGS.register:
         me.send(template.register(account_name, account_passwd).encode("utf-8"))
 
-    elif ARGS.action == "login":
+    elif ARGS.login:
         me.send(template.login(account_name, account_passwd).encode("utf-8"))
 
     else:

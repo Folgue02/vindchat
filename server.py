@@ -1,13 +1,21 @@
+#!/usr/bin/env python3
 import socket
 from threading import Thread
 from traceback import print_exc
+from sys import platform
 
-__version__ = 0.8
-__author__ = "Folgue02"
+if platform == "linux":
+    import readline
+    import rlcompleter
 
 # Project libraries
 from server.clienthandler import Handler
 from templates import template
+
+
+__version__ = 0.8
+__author__ = "Folgue02"
+
 
 # Configuration
 ADDRESS = "localhost"

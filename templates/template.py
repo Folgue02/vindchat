@@ -36,7 +36,3 @@ def register(name: str, passwd: str) -> str:
 def login(name: str, passwd: str) -> str:
     # Message sent from the client to the server in order to login into an existing account
     return dumps({"type": "login", "name": name, "passwd": passwd})
-
-# TODO Keep adding new types of messages
-
-

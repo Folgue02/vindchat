@@ -6,7 +6,7 @@ from share.codes import CODES
 class CommandHandler:
     def __init__(self, server):
         self.server = server
-        self.commands = {"chnick": self.chnick}
+        self.commands = {"chnick": self.chnick, "direct": self.direct}
 
     def execute_command(self, author_id, command: str, parameters: list) -> int:
         # Executes a command and returns a boolean value that represents the result of the command execution.
@@ -16,7 +16,8 @@ class CommandHandler:
         else:
             try:
                 self.commands[command](author_id, parameters)
-            except Exception as e:
+            except Exception:
+                print_exc()
                 self.server.sessions[author_id]["socket"].send(template.command_result(1).encode("utf-8"))
 
     def chnick(self, author_id, parameters):
@@ -34,8 +35,30 @@ class CommandHandler:
                 self.server.database.modify_account(self.server.get_session_account(author_id), nick=parameters[0])
             except Exception as e:
                 self.server.logger.log_msg("error", f"chnick: Couldn't save changes to the database: '{e}'")
-            
+
+    def direct(self, author_id, parameters):
+        """
+        Sends a message directly to the target, without passing through other machines appart from the server its self.
+        :param author_id:
+        :param parameters:
+        :return:
+        """
+
+        if len(parameters) < 2:
+            self.server.send_message(author_id, template.command_result(3))
+
+        else:
+            try:
+                target_id = int(parameters[0])
+
+            except ValueError:
+                self.server.send_message(author_id, template.command_result(3))
+                return
+
+            if not target_id in self.server.sessions:
+                self.server.send_message(author_id, template.command_result(8))
+
+            else:
+                self.server.send_message(author_id, template.direct_message(author_id, self.server.sessions[author_id]["name"], " ".join(parameters[1:])))
 
 
-
-# TODO Write more builtin commands

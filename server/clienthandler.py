@@ -131,6 +131,7 @@ class Handler:
                     self.sessions[client_id]["account"] = first_msg["name"]
 
                 else:
+                    self.send_message(client_id, template.command_result(6))
                     self.logger.log_msg("log", f"Client '{client_id}' failed login into account '{first_msg['name']}', disconnecting him...")
                     self.disconnect_client(client_id)
                     return
@@ -182,9 +183,16 @@ class Handler:
             self.disconnect_client(client_id)
             return
 
-        if client_input["type"] == "msg":  # Default message TODO FIX THIS
-            self.broadcast_message(template.common_message(client_id, self.sessions[client_id]["name"], client_input["message"]))
-            self.logger.log_msg(f"Message from {self.sessions[client_id]['name']}#{client_id}", client_input["message"])
+        if client_input["type"] == "msg":  
+            
+            # The message its empty
+            if client_input["message"] == "":
+                pass
+
+            else:
+
+                self.broadcast_message(template.common_message(client_id, self.sessions[client_id]["name"], client_input["message"]))
+                self.logger.log_msg(f"Message from {self.sessions[client_id]['name']}#{client_id}", client_input["message"])
 
         elif client_input["type"] == "command":
             self.logger.log_msg("log", f"User '{self.sessions[client_id]['name']}#{client_id}' has issued with command '{client_input['command']}'")

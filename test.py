@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# This client its just for debugging purposes and soon there will be a proper client for the server.
 import socket
 from threading import Thread
 from templates import template
@@ -68,7 +69,6 @@ def sender():
                 parsed = parse_syntax(userinput[1:])
                 command = parsed[0]
                 parameters = parsed[1:] if len(parsed) > 1 else []
-                print("Sending command" + template.command_message(command, parameters))
                 me.send(template.command_message(command, parameters).encode("utf-8"))
 
         else:
@@ -77,7 +77,8 @@ def sender():
 
 try:
     me.connect((address, port))
-    Thread(target=sender, daemon=False).start()
+    SENDER_THREAD = Thread(target=sender, daemon=False)
+    SENDER_THREAD.start()
     while True:
         msg = me.recv(1028).decode("utf-8")
 
@@ -86,7 +87,9 @@ try:
 
         except JSONDecodeError:
             logger.log_msg("error", "Cannot decode message sent by the server.")
+            logger.log_msg("warning", "Close the client by pressing Ctrl + C / Ctrl + Z")
             me.close()
+            SENDER_THREAD.join()
             exit(0)
 
         if msg["type"] == "msg":

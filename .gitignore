@@ -1,5 +1,6 @@
 # OWN
 logs.txt
+database.json # I don't need to upload the database.
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

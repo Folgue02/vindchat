@@ -3,6 +3,7 @@ import socket
 from share.logging import Logger
 from .commandhandler import CommandHandler
 from .accounthandler import AccountHandler
+from .protocolhandler import ProtocolHandler
 from templates import template # I dont know why this works, apparently, the import its made from the dir of 'server.py'
 from json import loads, JSONDecodeError
 
@@ -17,6 +18,7 @@ class Handler:
         self.logger = Logger(logfile=logfile)
         self.database = AccountHandler(self, database_file)
         self.command_handler = CommandHandler(self)
+        self.protocol_handler = ProtocolHandler(self)
         self.name_length = name_length
 
     def add_client(self, client_obj: socket.socket) -> int:
@@ -182,37 +184,34 @@ class Handler:
             self.logger.log_msg("error", f"_dedicated_client_handler: Client with id '{client_id}' has sent an invalid message. ('{client_input}')")
             self.disconnect_client(client_id)
             return
+    
+        self.protocol_handler.execute_input(client_id, client_input)
 
-        if client_input["type"] == "msg":  
-            
-            # The message its empty
-            if client_input["message"] == "":
-                pass
-
-            else:
-
-                self.broadcast_message(template.common_message(client_id, self.sessions[client_id]["name"], client_input["message"]))
-                self.logger.log_msg(f"Message from {self.sessions[client_id]['name']}#{client_id}", client_input["message"])
-
-        elif client_input["type"] == "command":
-            self.logger.log_msg("log", f"User '{self.sessions[client_id]['name']}#{client_id}' has issued with command '{client_input['command']}'")
-            self.command_handler.execute_command(client_id, client_input["command"], client_input["pars"])
-
-
-        else:
-            self.logger.log_msg("warning", f"Client with id {client_id} sent an unknown type of message: '{client_input['type']}'")
-
-    def get_session_account(self, client_id: int) -> str:
+    def get_session_account(self, session_id: int) -> str:
         """
-        Returns the name of the account related to the client
-        :param client_id:
+        Returns the name of the account related to the session
+        :param session_id:
         :return str:
         """
 
-        if not client_id in self.sessions:
-            raise KeyError(f"get_session_account: Cannot find client '{client_id}'")
+        if not session_id in self.sessions:
+            raise KeyError(f"get_session_account: Cannot find client '{session_id}'")
 
         else:
-            return self.sessions[client_id]["account"]
+            return self.sessions[session_id]["account"]
+
+    def get_session_name(self, session_id: int) -> str:
+        """
+        Returns the nick related to the session
+        :param session_id:
+        :return str:
+        """
+
+        if not session_id in self.sessions:
+            raise KeyError(f"get_session_nick: Cannot find client '{session_id}'")
+
+        else:
+            return self.sessions[session_id]["name"]
+
 
 
